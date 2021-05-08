@@ -5,7 +5,30 @@ import "truffle/Assert.sol";
 import "../contracts/NFT.sol";
 
 contract TestNFT {
-    function test_mint_forSale_getPrice() public {
+    function test_balanceOf() public {
+        NFT nft = new NFT();
+
+        uint256 actual = nft.balanceOf(address(this));
+        uint256 expected = 0;
+
+        Assert.equal(actual, expected, "Should not have any NFTs");
+    }
+
+    function test_mint_with_balanceOf() public {
+        NFT nft = new NFT();
+
+        uint256 id =
+            nft.mint(
+                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
+            );
+
+        uint256 actual = nft.balanceOf(address(this));
+        uint256 expected = 1;
+
+        Assert.equal(actual, expected, "Should have one NFT");
+    }
+
+    function test_forSale_and_getPrice_with_mint() public {
         NFT nft = new NFT();
 
         uint256 id =
@@ -18,6 +41,20 @@ contract TestNFT {
         uint256 actual = nft.getPrice(id);
         uint256 expected = price;
 
-        Assert.equal(actual, expected, "Price should be 10000");
+        Assert.equal(actual, expected, "Price is incorrect");
+    }
+
+    function test_ownerOf_with_mint() public {
+        NFT nft = new NFT();
+
+        uint256 id =
+            nft.mint(
+                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
+            );
+
+        address actual = nft.ownerOf(id);
+        address expected = address(this);
+
+        Assert.equal(actual, expected, "Wrong owner");
     }
 }
