@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ERC721.sol";
-import "./ERC721TokenReceiver.sol";
+import "../interfaces/ERC721.sol";
+import "../interfaces/ERC721TokenReceiver.sol";
 import "./utils/AddressUtils.sol";
 
 contract NFT is ERC721 {
