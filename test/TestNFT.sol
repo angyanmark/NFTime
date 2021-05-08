@@ -57,4 +57,19 @@ contract TestNFT {
 
         Assert.equal(actual, expected, "Wrong owner");
     }
+
+    function test_mint_getPrice_without_forSale() public {
+        bool r;
+        (r, ) = address(this).call(abi.encodePacked(this.mint_getPrice_fails.selector));
+        Assert.isFalse(r, "NFT should not be for sale!");
+    }
+
+    function mint_getPrice_fails() public {
+        NFT nft = new NFT();
+        uint256 id =
+            nft.mint(
+                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
+            );
+        nft.getPrice(id);
+    }
 }
