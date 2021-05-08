@@ -10,7 +10,7 @@ contract NFT is ERC721 {
 
   struct Token {
     address owner;
-    string URI;
+    string uri;
     uint256 price;
   }
 
