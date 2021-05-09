@@ -28,9 +28,10 @@ contract NFT is ERC721 {
         uint256 price;
         address approvedPerson;
     }
-    uint256 nextID = 1;
-    mapping(uint256 => ImageToken) private idToImageToken;
 
+    uint256 nextID = 1;
+    
+    mapping(uint256 => ImageToken) private idToImageToken;
     mapping(address => uint256) private ownerToNFTCount;
     mapping(address => mapping(address => bool)) private ownerToOperators;
 
@@ -230,6 +231,8 @@ contract NFT is ERC721 {
         address tokenOwner = idToImageToken[_tokenId].owner;
 
         delete idToImageToken[_tokenId];
+
+        ownerToNFTCount[tokenOwner]--;
 
         emit Transfer(tokenOwner, address(0), _tokenId);
     }

@@ -5,10 +5,14 @@ import "truffle/Assert.sol";
 import "../contracts/NFT.sol";
 
 contract TestNFT {
-    NFT nft = new NFT();
+    NFT nft;
 
     string constant URI =
         "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg";
+
+    function beforeEach() public {
+        nft = new NFT();
+    }
 
     function test_balanceOf() public {
         uint256 actual = nft.balanceOf(address(this));
@@ -84,6 +88,24 @@ contract TestNFT {
             abi.encodePacked(this.forSale_notForSale_getPrice_fails.selector)
         );
         Assert.isFalse(r, "NFT should not be for sale!");
+    }
+
+    function test_mint_burn_balanceOf() public {
+        uint256 id1 = nft.mint(URI);
+        uint256 balance = nft.balanceOf(address(this));
+        Assert.equal(balance, 1, "Balance should be 1!");
+
+        uint256 id2 = nft.mint(URI);
+        balance = nft.balanceOf(address(this));
+        Assert.equal(balance, 2, "Balance should be 2!");
+
+        nft.burn(id1);
+        balance = nft.balanceOf(address(this));
+        Assert.equal(balance, 1, "Balance should be 1!");
+
+        nft.burn(id2);
+        balance = nft.balanceOf(address(this));
+        Assert.equal(balance, 0, "Balance should be 0!");
     }
 
     /* Helpers, throwing error */
