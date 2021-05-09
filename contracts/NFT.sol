@@ -30,10 +30,8 @@ contract NFT is ERC721 {
     }
     uint256 nextID = 1;
     mapping(uint256 => ImageToken) private idToImageToken;
+
     mapping(address => uint256) private ownerToNFTCount;
-
-    mapping(uint256 => address) private idToOwner;
-
     mapping(address => mapping(address => bool)) private ownerToOperators;
 
     modifier onlyForSale(uint256 _tokenId) {
@@ -144,25 +142,9 @@ contract NFT is ERC721 {
     function _transfer(address _to, uint256 _tokenId) private {
         address from = idToImageToken[_tokenId].owner;
 
-        _clearApproval(_tokenId);
-        _removeNFT(from, _tokenId);
-        _addNFT(_to, _tokenId);
+        _changeOwner(_tokenId, from, _to);
 
         emit Transfer(from, _to, _tokenId);
-    }
-
-    function _removeNFT(address _from, uint256 _tokenId) private {
-        require(idToOwner[_tokenId] == _from, NOT_OWNER);
-
-        ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
-        delete idToOwner[_tokenId];
-    }
-
-    function _addNFT(address _to, uint256 _tokenId) private {
-        require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
-
-        idToOwner[_tokenId] = _to;
-        ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
     }
 
     function _clearApproval(uint256 _tokenId) private {
@@ -174,6 +156,7 @@ contract NFT is ERC721 {
 
         require(imageToken.price != 0, NFT_NOT_FOR_SALE);
         require(msg.value >= imageToken.price, NFT_COSTS_MORE);
+        require(imageToken.owner != msg.sender, IS_OWNER);
 
         payable(imageToken.owner).transfer(msg.value);
         imageToken.owner = msg.sender;
@@ -182,7 +165,7 @@ contract NFT is ERC721 {
     }
 
     function _changeOwner(uint256 _tokenId, address _from, address _to) private {
-        require(idToOwner[_tokenId] == _from, NOT_OWNER);
+        require(idToImageToken[_tokenId].owner == _from, NOT_OWNER);
 
         ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
         ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
@@ -235,8 +218,9 @@ contract NFT is ERC721 {
         require(msg.sender != address(0), ZERO_ADDRESS);
         require(idToImageToken[nextID].owner == address(0), NFT_ALREADY_EXISTS);
 
-        _addNFT(msg.sender, nextID);
         idToImageToken[nextID] = ImageToken(msg.sender, _uri, 0, address(0));
+
+        ownerToNFTCount[msg.sender]++;
 
         emit Transfer(address(0), msg.sender, nextID);
         return nextID++;
@@ -244,8 +228,6 @@ contract NFT is ERC721 {
 
     function burn(uint256 _tokenId) public authorized(_tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
-        _clearApproval(_tokenId);
-        _removeNFT(tokenOwner, _tokenId);
 
         delete idToImageToken[_tokenId];
 
