@@ -108,6 +108,14 @@ contract TestNFT {
         Assert.equal(balance, 0, "Balance should be 0!");
     }
 
+    function test_mint_forSale_burn_getPrice() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.mint_forSale_burn_getPrice_fails.selector)
+        );
+        Assert.isFalse(r, "NFT should not exist!");
+    }
+
     /* Helpers, throwing error */
 
     function balanceOf_null_address_fails() public view {
@@ -133,6 +141,13 @@ contract TestNFT {
         uint256 id = nft.mint(URI);
         nft.forSale(id, 10000);
         nft.notForSale(id);
+        nft.getPrice(id);
+    }
+
+    function mint_forSale_burn_getPrice_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.forSale(id, 10000);
+        nft.burn(id);
         nft.getPrice(id);
     }
 }
