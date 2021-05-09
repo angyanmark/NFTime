@@ -26,13 +26,14 @@ contract NFT is ERC721 {
         address owner;
         string uri;
         uint256 price;
+        address approvedPerson;
     }
     uint256 nextID = 1;
     mapping(uint256 => ImageToken) private idToImageToken;
     mapping(address => uint256) private ownerToNFTCount;
     mapping(uint256 => address) private idToOwner;
 
-    mapping(uint256 => address) private idToApproval;
+    //mapping(uint256 => address) private idToApproval; idToImageToken[_tokenId].approvedPerson//idToApproval[_tokenId]
     mapping(address => mapping(address => bool)) private ownerToOperators;
 
     modifier onlyForSale(uint256 _tokenId) {
@@ -45,7 +46,7 @@ contract NFT is ERC721 {
         _;
     }
 
-    modifier canOperate(uint256 _tokenId) {
+    modifier canApprove(uint256 _tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(
             tokenOwner == msg.sender ||
@@ -55,12 +56,11 @@ contract NFT is ERC721 {
         _;
     }
 
-    modifier canTransfer(uint256 _tokenId) {
+    modifier authorized(uint256 _tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(
-            (tokenOwner == msg.sender &&
-                idToImageToken[_tokenId].owner == msg.sender) ||
-                idToApproval[_tokenId] == msg.sender ||
+            tokenOwner == msg.sender ||
+                idToImageToken[_tokenId].approvedPerson == msg.sender ||
                 ownerToOperators[tokenOwner][msg.sender],
             NOT_OWNER_APPROVED_OR_OPERATOR
         );
@@ -77,7 +77,13 @@ contract NFT is ERC721 {
         return ownerToNFTCount[_owner];
     }
 
-    function ownerOf(uint256 _tokenId) public view override validNFT(_tokenId) returns (address) {
+    function ownerOf(uint256 _tokenId)
+        public
+        view
+        override
+        validNFT(_tokenId)
+        returns (address)
+    {
         return idToImageToken[_tokenId].owner;
     }
 
@@ -103,7 +109,7 @@ contract NFT is ERC721 {
         address _to,
         uint256 _tokenId,
         bytes memory _data
-    ) private canTransfer(_tokenId) validNFT(_tokenId) {
+    ) private authorized(_tokenId) validNFT(_tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(tokenOwner == _from, NOT_OWNER);
         require(_to != address(0), ZERO_ADDRESS);
@@ -128,7 +134,7 @@ contract NFT is ERC721 {
         address _from,
         address _to,
         uint256 _tokenId
-    ) public payable override canTransfer(_tokenId) validNFT(_tokenId) {
+    ) public payable override authorized(_tokenId) validNFT(_tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(tokenOwner == _from, NOT_OWNER);
         require(_to != address(0), ZERO_ADDRESS);
@@ -160,8 +166,8 @@ contract NFT is ERC721 {
     }
 
     function _clearApproval(uint256 _tokenId) private {
-        if (idToApproval[_tokenId] != address(0)) {
-            delete idToApproval[_tokenId];
+        if (idToImageToken[_tokenId].approvedPerson != address(0)) {
+            idToImageToken[_tokenId].approvedPerson = address(0);
         }
     }
 
@@ -183,12 +189,12 @@ contract NFT is ERC721 {
         public
         payable
         override
-        canOperate(_tokenId)
+        canApprove(_tokenId)
         validNFT(_tokenId)
     {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(_approved != tokenOwner, IS_OWNER);
-        idToApproval[_tokenId] = _approved;
+        idToImageToken[_tokenId].approvedPerson = _approved;
         emit Approval(tokenOwner, _approved, _tokenId);
     }
 
@@ -207,7 +213,7 @@ contract NFT is ERC721 {
         validNFT(_tokenId)
         returns (address)
     {
-        return idToApproval[_tokenId];
+        return idToImageToken[_tokenId].approvedPerson;
     }
 
     function isApprovedForAll(address _owner, address _operator)
@@ -224,13 +230,13 @@ contract NFT is ERC721 {
         require(idToImageToken[nextID].owner == address(0), NFT_ALREADY_EXISTS);
 
         _addNFT(msg.sender, nextID);
-        idToImageToken[nextID] = ImageToken(msg.sender, _uri, 0);
+        idToImageToken[nextID] = ImageToken(msg.sender, _uri, 0, address(0));
 
         emit Transfer(address(0), msg.sender, nextID);
         return nextID++;
     }
 
-    function burn(uint256 _tokenId) public canTransfer(_tokenId) {
+    function burn(uint256 _tokenId) public authorized(_tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
         _clearApproval(_tokenId);
         _removeNFT(tokenOwner, _tokenId);
@@ -242,19 +248,24 @@ contract NFT is ERC721 {
 
     function forSale(uint256 _tokenId, uint256 price)
         public
-        canTransfer(_tokenId)
+        authorized(_tokenId)
     {
         require(price != 0, PRICE_CANNOT_BE_ZERO);
         idToImageToken[_tokenId].price = price;
     }
 
-    function notForSale(uint256 _tokenId) public canTransfer(_tokenId) {
+    function notForSale(uint256 _tokenId)
+        public
+        authorized(_tokenId)
+        onlyForSale(_tokenId)
+    {
         idToImageToken[_tokenId].price = 0;
     }
 
     function getPrice(uint256 _tokenId)
         public
         view
+        validNFT(_tokenId)
         onlyForSale(_tokenId)
         returns (uint256)
     {
