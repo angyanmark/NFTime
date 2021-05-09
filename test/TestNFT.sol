@@ -26,6 +26,14 @@ contract TestNFT {
         Assert.equal(actual, expected, "Should have one NFT");
     }
 
+    function test_balanceOf_null_address() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.balanceOf_nulladdress_fails.selector)
+        );
+        Assert.isFalse(r, "Shouldm't return balance of null address!");
+    }
+
     function test_forSale_and_getPrice_with_mint() public {
         uint256 id = nft.mint(URI);
         uint256 price = 10000;
@@ -52,6 +60,12 @@ contract TestNFT {
             abi.encodePacked(this.mint_getPrice_fails.selector)
         );
         Assert.isFalse(r, "NFT should not be for sale!");
+    }
+
+    /* Helpers */
+
+    function balanceOf_null_address_fails() public view {
+        nft.balanceOf(address(0));
     }
 
     function mint_getPrice_fails() public {
