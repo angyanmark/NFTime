@@ -8,14 +8,6 @@ import "./utils/AddressUtils.sol";
 contract NFT is ERC721 {
     using AddressUtils for address;
 
-    struct Token {
-        address owner;
-        string uri;
-        uint256 price;
-    }
-
-    uint256 lastID = 1;
-
     string constant ZERO_ADDRESS = "Zero address";
     string constant NOT_VALID_NFT = "Not valid NFT";
     string constant NOT_OWNER_APPROVED_OR_OPERATOR =
@@ -28,10 +20,15 @@ contract NFT is ERC721 {
     string constant NFT_NOT_FOR_SALE = "NFT not for sale";
     string constant NFT_COSTS_MORE = "NFT costs more";
     string constant PRICE_CANNOT_BE_ZERO = "Price cannot be zero";
-
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
 
-    mapping(uint256 => Token) public ownerships;
+    struct ImageToken {
+        address owner;
+        string uri;
+        uint256 price;
+    }
+    uint256 nextID = 1;
+    mapping(uint256 => ImageToken) private idToImageToken;
 
     mapping(uint256 => address) internal idToOwner;
     mapping(uint256 => address) internal idToApproval;
@@ -39,14 +36,14 @@ contract NFT is ERC721 {
     mapping(address => mapping(address => bool)) internal ownerToOperators;
 
     modifier onlyForSale(uint256 _tokenId) {
-        require(ownerships[_tokenId].price != 0, NFT_NOT_FOR_SALE);
+        require(idToImageToken[_tokenId].price != 0, NFT_NOT_FOR_SALE);
         _;
     }
 
     modifier onlyOwner(uint256 _tokenId) {
         address tokenOwner = idToOwner[_tokenId];
         require(tokenOwner == msg.sender, NOT_OWNER);
-        require(ownerships[_tokenId].owner == msg.sender, NOT_OWNER);
+        require(idToImageToken[_tokenId].owner == msg.sender, NOT_OWNER);
         _;
     }
 
@@ -191,10 +188,10 @@ contract NFT is ERC721 {
     }
 
     function _transferOwnership(uint256 _tokenId) internal {
-        require(ownerships[_tokenId].price != 0, NFT_NOT_FOR_SALE);
-        require(msg.value >= ownerships[_tokenId].price, NFT_COSTS_MORE);
-        payable(ownerships[_tokenId].owner).transfer(msg.value);
-        ownerships[_tokenId].owner = msg.sender;
+        require(idToImageToken[_tokenId].price != 0, NFT_NOT_FOR_SALE);
+        require(msg.value >= idToImageToken[_tokenId].price, NFT_COSTS_MORE);
+        payable(idToImageToken[_tokenId].owner).transfer(msg.value);
+        idToImageToken[_tokenId].owner = msg.sender;
     }
 
     function _clearApproval(uint256 _tokenId) private {
@@ -223,15 +220,8 @@ contract NFT is ERC721 {
         require(_to != address(0), ZERO_ADDRESS);
         require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
         _addNFT(_to, _tokenId);
-        _addOwnership(_tokenId, _uri);
+        idToImageToken[_tokenId] = ImageToken(msg.sender, _uri, 0);
         emit Transfer(address(0), _to, _tokenId);
-    }
-
-    function _addOwnership(uint256 _tokenId, string memory _uri)
-        internal
-        virtual
-    {
-        ownerships[_tokenId] = Token(msg.sender, _uri, 0);
     }
 
     function _burn(uint256 _tokenId) internal virtual validNFT(_tokenId) {
@@ -243,12 +233,12 @@ contract NFT is ERC721 {
     }
 
     function _removeOwnership(uint256 _tokenId) internal virtual {
-        delete ownerships[_tokenId];
+        delete idToImageToken[_tokenId];
     }
 
     function mint(string memory _uri) public returns (uint256) {
-        _mint(msg.sender, lastID, _uri);
-        return lastID++;
+        _mint(msg.sender, nextID, _uri);
+        return nextID++;
     }
 
     function burn(uint256 _tokenId) public {
@@ -260,11 +250,11 @@ contract NFT is ERC721 {
         onlyOwner(_tokenId)
     {
         require(price != 0, PRICE_CANNOT_BE_ZERO);
-        ownerships[_tokenId].price = price;
+        idToImageToken[_tokenId].price = price;
     }
 
     function notForSale(uint256 _tokenId) public onlyOwner(_tokenId) {
-        ownerships[_tokenId].price = 0;
+        idToImageToken[_tokenId].price = 0;
     }
 
     function getPrice(uint256 _tokenId)
@@ -273,6 +263,6 @@ contract NFT is ERC721 {
         onlyForSale(_tokenId)
         returns (uint256)
     {
-        return ownerships[_tokenId].price;
+        return idToImageToken[_tokenId].price;
     }
 }
