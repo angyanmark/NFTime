@@ -29,9 +29,17 @@ contract TestNFT {
     function test_balanceOf_null_address() public {
         bool r;
         (r, ) = address(this).call(
-            abi.encodePacked(this.balanceOf_nulladdress_fails.selector)
+            abi.encodePacked(this.balanceOf_null_address_fails.selector)
         );
-        Assert.isFalse(r, "Shouldm't return balance of null address!");
+        Assert.isFalse(r, "Shouldn't return balance of null address!");
+    }
+
+    function test_forSale_zero() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.forSale_zero_fails.selector)
+        );
+        Assert.isFalse(r, "Shouldn't set price to zero!");
     }
 
     function test_forSale_and_getPrice_with_mint() public {
@@ -66,6 +74,11 @@ contract TestNFT {
 
     function balanceOf_null_address_fails() public view {
         nft.balanceOf(address(0));
+    }
+
+    function forSale_zero_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.forSale(id, 0);
     }
 
     function mint_getPrice_fails() public {
