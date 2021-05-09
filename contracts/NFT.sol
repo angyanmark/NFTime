@@ -30,10 +30,10 @@ contract NFT is ERC721 {
     uint256 nextID = 1;
     mapping(uint256 => ImageToken) private idToImageToken;
 
-    mapping(uint256 => address) internal idToOwner;
-    mapping(uint256 => address) internal idToApproval;
+    mapping(uint256 => address) private idToOwner;
+    mapping(uint256 => address) private idToApproval;
     mapping(address => uint256) private ownerToNFTCount;
-    mapping(address => mapping(address => bool)) internal ownerToOperators;
+    mapping(address => mapping(address => bool)) private ownerToOperators;
 
     modifier onlyForSale(uint256 _tokenId) {
         require(idToImageToken[_tokenId].price != 0, NFT_NOT_FOR_SALE);
@@ -178,20 +178,26 @@ contract NFT is ERC721 {
         }
     }
 
-    function _transfer(address _to, uint256 _tokenId) internal {
+    function _transfer(address _to, uint256 _tokenId) private {
         address from = idToOwner[_tokenId];
+
         _clearApproval(_tokenId);
         _removeNFT(from, _tokenId);
         _addNFT(_to, _tokenId);
+
         _transferOwnership(_tokenId);
+
         emit Transfer(from, _to, _tokenId);
     }
 
-    function _transferOwnership(uint256 _tokenId) internal {
-        require(idToImageToken[_tokenId].price != 0, NFT_NOT_FOR_SALE);
-        require(msg.value >= idToImageToken[_tokenId].price, NFT_COSTS_MORE);
-        payable(idToImageToken[_tokenId].owner).transfer(msg.value);
-        idToImageToken[_tokenId].owner = msg.sender;
+    function _transferOwnership(uint256 _tokenId) private {
+        ImageToken memory imageToken = idToImageToken[_tokenId];
+
+        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
+        require(msg.value >= imageToken.price, NFT_COSTS_MORE);
+
+        payable(imageToken.owner).transfer(msg.value);
+        imageToken.owner = msg.sender;
     }
 
     function _clearApproval(uint256 _tokenId) private {
@@ -200,49 +206,39 @@ contract NFT is ERC721 {
         }
     }
 
-    function _removeNFT(address _from, uint256 _tokenId) internal virtual {
+    function _removeNFT(address _from, uint256 _tokenId) private {
         require(idToOwner[_tokenId] == _from, NOT_OWNER);
+
         ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
         delete idToOwner[_tokenId];
     }
 
-    function _addNFT(address _to, uint256 _tokenId) internal virtual {
+    function _addNFT(address _to, uint256 _tokenId) private {
         require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
+
         idToOwner[_tokenId] = _to;
         ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
     }
 
-    function _mint(
-        address _to,
-        uint256 _tokenId,
-        string memory _uri
-    ) internal virtual {
-        require(_to != address(0), ZERO_ADDRESS);
-        require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
-        _addNFT(_to, _tokenId);
-        idToImageToken[_tokenId] = ImageToken(msg.sender, _uri, 0);
-        emit Transfer(address(0), _to, _tokenId);
-    }
-
-    function _burn(uint256 _tokenId) internal virtual validNFT(_tokenId) {
-        address tokenOwner = idToOwner[_tokenId];
-        _clearApproval(_tokenId);
-        _removeNFT(tokenOwner, _tokenId);
-        _removeOwnership(_tokenId);
-        emit Transfer(tokenOwner, address(0), _tokenId);
-    }
-
-    function _removeOwnership(uint256 _tokenId) internal virtual {
-        delete idToImageToken[_tokenId];
-    }
-
     function mint(string memory _uri) public returns (uint256) {
-        _mint(msg.sender, nextID, _uri);
+        require(msg.sender != address(0), ZERO_ADDRESS);
+        require(idToOwner[nextID] == address(0), NFT_ALREADY_EXISTS);
+
+        _addNFT(msg.sender, nextID);
+        idToImageToken[nextID] = ImageToken(msg.sender, _uri, 0);
+
+        emit Transfer(address(0), msg.sender, nextID);
         return nextID++;
     }
 
     function burn(uint256 _tokenId) public {
-        _burn(_tokenId);
+        address tokenOwner = idToOwner[_tokenId];
+        _clearApproval(_tokenId);
+        _removeNFT(tokenOwner, _tokenId);
+
+        delete idToImageToken[_tokenId];
+
+        emit Transfer(tokenOwner, address(0), _tokenId);
     }
 
     function forSale(uint256 _tokenId, uint256 price)
