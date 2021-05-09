@@ -31,9 +31,9 @@ contract NFT is ERC721 {
     uint256 nextID = 1;
     mapping(uint256 => ImageToken) private idToImageToken;
     mapping(address => uint256) private ownerToNFTCount;
+
     mapping(uint256 => address) private idToOwner;
 
-    //mapping(uint256 => address) private idToApproval; idToImageToken[_tokenId].approvedPerson//idToApproval[_tokenId]
     mapping(address => mapping(address => bool)) private ownerToOperators;
 
     modifier onlyForSale(uint256 _tokenId) {
@@ -151,26 +151,6 @@ contract NFT is ERC721 {
         emit Transfer(from, _to, _tokenId);
     }
 
-    function buy(uint256 _tokenId) public payable onlyForSale(_tokenId) {
-        ImageToken memory imageToken = idToImageToken[_tokenId];
-
-        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
-        require(msg.value >= imageToken.price, NFT_COSTS_MORE);
-
-        payable(imageToken.owner).transfer(msg.value);
-        imageToken.owner = msg.sender;
-
-        _clearApproval(_tokenId);
-        _removeNFT(imageToken.owner, _tokenId);
-        _addNFT(msg.sender, _tokenId);
-    }
-
-    function _clearApproval(uint256 _tokenId) private {
-        if (idToImageToken[_tokenId].approvedPerson != address(0)) {
-            idToImageToken[_tokenId].approvedPerson = address(0);
-        }
-    }
-
     function _removeNFT(address _from, uint256 _tokenId) private {
         require(idToOwner[_tokenId] == _from, NOT_OWNER);
 
@@ -183,6 +163,32 @@ contract NFT is ERC721 {
 
         idToOwner[_tokenId] = _to;
         ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
+    }
+
+    function _clearApproval(uint256 _tokenId) private {
+        idToImageToken[_tokenId].approvedPerson = address(0);
+    }
+
+    function buy(uint256 _tokenId) public payable onlyForSale(_tokenId) {
+        ImageToken memory imageToken = idToImageToken[_tokenId];
+
+        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
+        require(msg.value >= imageToken.price, NFT_COSTS_MORE);
+
+        payable(imageToken.owner).transfer(msg.value);
+        imageToken.owner = msg.sender;
+
+        _changeOwner(_tokenId, imageToken.owner, msg.sender);
+    }
+
+    function _changeOwner(uint256 _tokenId, address _from, address _to) private {
+        require(idToOwner[_tokenId] == _from, NOT_OWNER);
+
+        ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
+        ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
+
+        idToImageToken[_tokenId].owner = _to;
+        _clearApproval(_tokenId);
     }
 
     function approve(address _approved, uint256 _tokenId)
