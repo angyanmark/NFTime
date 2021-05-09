@@ -234,7 +234,7 @@ contract NFT is ERC721 {
         return nextID++;
     }
 
-    function burn(uint256 _tokenId) public {
+    function burn(uint256 _tokenId) public canTransfer(_tokenId) {
         address tokenOwner = idToOwner[_tokenId];
         _clearApproval(_tokenId);
         _removeNFT(tokenOwner, _tokenId);
@@ -246,13 +246,13 @@ contract NFT is ERC721 {
 
     function forSale(uint256 _tokenId, uint256 price)
         public
-        onlyOwner(_tokenId)
+        canTransfer(_tokenId)
     {
         require(price != 0, PRICE_CANNOT_BE_ZERO);
         idToImageToken[_tokenId].price = price;
     }
 
-    function notForSale(uint256 _tokenId) public onlyOwner(_tokenId) {
+    function notForSale(uint256 _tokenId) public canTransfer(_tokenId) {
         idToImageToken[_tokenId].price = 0;
     }
 
