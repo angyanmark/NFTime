@@ -60,7 +60,9 @@ contract TestNFT {
 
     function test_mint_getPrice_without_forSale() public {
         bool r;
-        (r, ) = address(this).call(abi.encodePacked(this.mint_getPrice_fails.selector));
+        (r, ) = address(this).call(
+            abi.encodePacked(this.mint_getPrice_fails.selector)
+        );
         Assert.isFalse(r, "NFT should not be for sale!");
     }
 
