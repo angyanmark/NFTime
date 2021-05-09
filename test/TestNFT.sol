@@ -70,7 +70,23 @@ contract TestNFT {
         Assert.isFalse(r, "NFT should not be for sale!");
     }
 
-    /* Helpers */
+    function test_notForSale_on_already_notForSale() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.notForSale_on_already_notForSale_fails.selector)
+        );
+        Assert.isFalse(r, "Price already zero!");
+    }
+
+    function test_forSale_notForSale_getPrice() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.forSale_notForSale_getPrice_fails.selector)
+        );
+        Assert.isFalse(r, "NFT should not be for sale!");
+    }
+
+    /* Helpers, throwing error */
 
     function balanceOf_null_address_fails() public view {
         nft.balanceOf(address(0));
@@ -83,6 +99,18 @@ contract TestNFT {
 
     function mint_getPrice_fails() public {
         uint256 id = nft.mint(URI);
+        nft.getPrice(id);
+    }
+
+    function notForSale_on_already_notForSale_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.notForSale(id);
+    }
+
+    function forSale_notForSale_getPrice_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.forSale(id, 10000);
+        nft.notForSale(id);
         nft.getPrice(id);
     }
 }
