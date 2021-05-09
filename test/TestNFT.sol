@@ -5,6 +5,9 @@ import "truffle/Assert.sol";
 import "../contracts/NFT.sol";
 
 contract TestNFT {
+    string constant URI =
+        "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg";
+
     function test_balanceOf() public {
         NFT nft = new NFT();
 
@@ -17,10 +20,7 @@ contract TestNFT {
     function test_mint_with_balanceOf() public {
         NFT nft = new NFT();
 
-        uint256 id =
-            nft.mint(
-                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
-            );
+        uint256 id = nft.mint(URI);
 
         uint256 actual = nft.balanceOf(address(this));
         uint256 expected = 1;
@@ -31,10 +31,7 @@ contract TestNFT {
     function test_forSale_and_getPrice_with_mint() public {
         NFT nft = new NFT();
 
-        uint256 id =
-            nft.mint(
-                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
-            );
+        uint256 id = nft.mint(URI);
         uint256 price = 10000;
         nft.forSale(id, price);
 
@@ -47,10 +44,7 @@ contract TestNFT {
     function test_ownerOf_with_mint() public {
         NFT nft = new NFT();
 
-        uint256 id =
-            nft.mint(
-                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
-            );
+        uint256 id = nft.mint(URI);
 
         address actual = nft.ownerOf(id);
         address expected = address(this);
@@ -68,10 +62,7 @@ contract TestNFT {
 
     function mint_getPrice_fails() public {
         NFT nft = new NFT();
-        uint256 id =
-            nft.mint(
-                "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg"
-            );
+        uint256 id = nft.mint(URI);
         nft.getPrice(id);
     }
 }
