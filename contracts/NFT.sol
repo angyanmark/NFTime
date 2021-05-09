@@ -11,7 +11,7 @@ contract NFT is ERC721 {
     string constant ZERO_ADDRESS = "Zero address";
     string constant NOT_VALID_NFT = "Not valid NFT";
     string constant NOT_OWNER_APPROVED_OR_OPERATOR =
-        "Not owner approved or operator";
+        "Not owner, approved or operator";
     string constant NOT_OWNER = "Not owner";
     string constant NOT_ABLE_TO_RECEIVE_NFT = "Not able to receive NFT";
     string constant NFT_ALREADY_EXISTS = "NFT already exists";
@@ -20,7 +20,7 @@ contract NFT is ERC721 {
     string constant NFT_NOT_FOR_SALE = "NFT not for sale";
     string constant NFT_COSTS_MORE = "NFT costs more";
     string constant PRICE_CANNOT_BE_ZERO = "Price cannot be zero";
-    bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
+    bytes4 private constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
 
     struct ImageToken {
         address owner;
@@ -41,8 +41,7 @@ contract NFT is ERC721 {
     }
 
     modifier onlyOwner(uint256 _tokenId) {
-        address tokenOwner = idToOwner[_tokenId];
-        require(tokenOwner == msg.sender, NOT_OWNER);
+        require(idToOwner[_tokenId] == msg.sender, NOT_OWNER);
         require(idToImageToken[_tokenId].owner == msg.sender, NOT_OWNER);
         _;
     }
@@ -50,7 +49,8 @@ contract NFT is ERC721 {
     modifier canOperate(uint256 _tokenId) {
         address tokenOwner = idToOwner[_tokenId];
         require(
-            tokenOwner == msg.sender ||
+            (tokenOwner == msg.sender &&
+                idToImageToken[_tokenId].owner == msg.sender) ||
                 ownerToOperators[tokenOwner][msg.sender],
             NOT_OWNER_OR_OPERATOR
         );
@@ -60,7 +60,8 @@ contract NFT is ERC721 {
     modifier canTransfer(uint256 _tokenId) {
         address tokenOwner = idToOwner[_tokenId];
         require(
-            tokenOwner == msg.sender ||
+            (tokenOwner == msg.sender &&
+                idToImageToken[_tokenId].owner == msg.sender) ||
                 idToApproval[_tokenId] == msg.sender ||
                 ownerToOperators[tokenOwner][msg.sender],
             NOT_OWNER_APPROVED_OR_OPERATOR
@@ -101,6 +102,32 @@ contract NFT is ERC721 {
         _safeTransferFrom(_from, _to, _tokenId, "");
     }
 
+    function _safeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _tokenId,
+        bytes memory _data
+    ) private canTransfer(_tokenId) validNFT(_tokenId) {
+        address tokenOwner = idToOwner[_tokenId];
+        require(tokenOwner == _from, NOT_OWNER);
+        require(_to != address(0), ZERO_ADDRESS);
+        _transfer(_to, _tokenId);
+
+        if (_to.isContract()) {
+            bytes4 retval =
+                ERC721TokenReceiver(_to).onERC721Received(
+                    msg.sender,
+                    _from,
+                    _tokenId,
+                    _data
+                );
+            require(
+                retval == MAGIC_ON_ERC721_RECEIVED,
+                NOT_ABLE_TO_RECEIVE_NFT
+            );
+        }
+    }
+
     function transferFrom(
         address _from,
         address _to,
@@ -110,6 +137,50 @@ contract NFT is ERC721 {
         require(tokenOwner == _from, NOT_OWNER);
         require(_to != address(0), ZERO_ADDRESS);
         _transfer(_to, _tokenId);
+    }
+
+    function _transfer(address _to, uint256 _tokenId) private {
+        address from = idToOwner[_tokenId];
+
+        _clearApproval(_tokenId);
+        _removeNFT(from, _tokenId);
+        _addNFT(_to, _tokenId);
+
+        emit Transfer(from, _to, _tokenId);
+    }
+
+    function buy(uint256 _tokenId) public payable onlyForSale(_tokenId) {
+        ImageToken memory imageToken = idToImageToken[_tokenId];
+
+        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
+        require(msg.value >= imageToken.price, NFT_COSTS_MORE);
+
+        payable(imageToken.owner).transfer(msg.value);
+        imageToken.owner = msg.sender;
+
+        _clearApproval(_tokenId);
+        _removeNFT(imageToken.owner, _tokenId);
+        _addNFT(msg.sender, _tokenId);
+    }
+
+    function _clearApproval(uint256 _tokenId) private {
+        if (idToApproval[_tokenId] != address(0)) {
+            delete idToApproval[_tokenId];
+        }
+    }
+
+    function _removeNFT(address _from, uint256 _tokenId) private {
+        require(idToOwner[_tokenId] == _from, NOT_OWNER);
+
+        ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
+        delete idToOwner[_tokenId];
+    }
+
+    function _addNFT(address _to, uint256 _tokenId) private {
+        require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
+
+        idToOwner[_tokenId] = _to;
+        ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
     }
 
     function approve(address _approved, uint256 _tokenId)
@@ -150,74 +221,6 @@ contract NFT is ERC721 {
         returns (bool)
     {
         return ownerToOperators[_owner][_operator];
-    }
-
-    function _safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        bytes memory _data
-    ) private canTransfer(_tokenId) validNFT(_tokenId) {
-        address tokenOwner = idToOwner[_tokenId];
-        require(tokenOwner == _from, NOT_OWNER);
-        require(_to != address(0), ZERO_ADDRESS);
-        _transfer(_to, _tokenId);
-
-        if (_to.isContract()) {
-            bytes4 retval =
-                ERC721TokenReceiver(_to).onERC721Received(
-                    msg.sender,
-                    _from,
-                    _tokenId,
-                    _data
-                );
-            require(
-                retval == MAGIC_ON_ERC721_RECEIVED,
-                NOT_ABLE_TO_RECEIVE_NFT
-            );
-        }
-    }
-
-    function _transfer(address _to, uint256 _tokenId) private {
-        address from = idToOwner[_tokenId];
-
-        _clearApproval(_tokenId);
-        _removeNFT(from, _tokenId);
-        _addNFT(_to, _tokenId);
-
-        _transferOwnership(_tokenId);
-
-        emit Transfer(from, _to, _tokenId);
-    }
-
-    function _transferOwnership(uint256 _tokenId) private {
-        ImageToken memory imageToken = idToImageToken[_tokenId];
-
-        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
-        require(msg.value >= imageToken.price, NFT_COSTS_MORE);
-
-        payable(imageToken.owner).transfer(msg.value);
-        imageToken.owner = msg.sender;
-    }
-
-    function _clearApproval(uint256 _tokenId) private {
-        if (idToApproval[_tokenId] != address(0)) {
-            delete idToApproval[_tokenId];
-        }
-    }
-
-    function _removeNFT(address _from, uint256 _tokenId) private {
-        require(idToOwner[_tokenId] == _from, NOT_OWNER);
-
-        ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
-        delete idToOwner[_tokenId];
-    }
-
-    function _addNFT(address _to, uint256 _tokenId) private {
-        require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
-
-        idToOwner[_tokenId] = _to;
-        ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
     }
 
     function mint(string memory _uri) public returns (uint256) {
