@@ -4,10 +4,10 @@ const URI =
   "https://pbs.twimg.com/profile_images/1375929798296412160/zWcu5LX8.jpg";
 
 contract("NFT", function (accounts) {
-  it("Test buy with mint and forSale", () => {
-    const account_one = accounts[0];
-    const account_two = accounts[1];
+  const account_one = accounts[0];
+  const account_two = accounts[1];
 
+  it("Test buy with mint and forSale", () => {
     return NFT.deployed().then(async (nft) => {
       let price = 10;
       let id = 1;
