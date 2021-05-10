@@ -160,8 +160,6 @@ contract NFT is ERC721 {
         require(imageToken.owner != msg.sender, IS_OWNER);
 
         payable(imageToken.owner).transfer(msg.value);
-        imageToken.owner = msg.sender;
-
         _changeOwner(_tokenId, imageToken.owner, msg.sender);
     }
 
