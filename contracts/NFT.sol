@@ -166,10 +166,11 @@ contract NFT is ERC721 {
     function _changeOwner(uint256 _tokenId, address _from, address _to) private {
         require(idToImageToken[_tokenId].owner == _from, NOT_OWNER);
 
-        ownerToNFTCount[_from] = ownerToNFTCount[_from] - 1;
-        ownerToNFTCount[_to] = ownerToNFTCount[_to] + 1;
+        ownerToNFTCount[_from]--;
+        ownerToNFTCount[_to]++;
 
         idToImageToken[_tokenId].owner = _to;
+        idToImageToken[_tokenId].price = 0;
         _clearApproval(_tokenId);
     }
 
