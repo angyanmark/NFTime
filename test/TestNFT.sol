@@ -124,6 +124,15 @@ contract TestNFT {
         Assert.isFalse(r, "NFT should not exist!");
     }
 
+    function test_getApproved_with_mint() public {
+        uint256 id = nft.mint(URI);
+
+        address actual = nft.getApproved(id);
+        address expected = address(0);
+
+        Assert.equal(actual, expected, "No one should be approved!");
+    }
+
     /* Helpers, throwing error */
 
     function balanceOf_zero_address_fails() public view {
