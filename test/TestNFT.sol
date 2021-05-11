@@ -30,12 +30,12 @@ contract TestNFT {
         Assert.equal(actual, expected, "Should have one NFT");
     }
 
-    function test_balanceOf_null_address() public {
+    function test_balanceOf_zero_address() public {
         bool r;
         (r, ) = address(this).call(
-            abi.encodePacked(this.balanceOf_null_address_fails.selector)
+            abi.encodePacked(this.balanceOf_zero_address_fails.selector)
         );
-        Assert.isFalse(r, "Shouldn't return balance of null address!");
+        Assert.isFalse(r, "Should throw on zero address!");
     }
 
     function test_forSale_zero() public {
@@ -118,7 +118,7 @@ contract TestNFT {
 
     /* Helpers, throwing error */
 
-    function balanceOf_null_address_fails() public view {
+    function balanceOf_zero_address_fails() public view {
         nft.balanceOf(address(0));
     }
 
