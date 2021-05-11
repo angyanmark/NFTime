@@ -159,6 +159,14 @@ contract TestNFT {
         Assert.isFalse(r, "Should throw on invalid NFT!");
     }
 
+    function test_buy_on_not_for_sale() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.buy_on_not_for_sale_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on not for sale NFT!");
+    }
+
     /* Helpers, throwing error */
 
     function balanceOf_zero_address_fails() public view {
@@ -209,5 +217,10 @@ contract TestNFT {
 
     function approve_on_invalid_NFT_fails() public {
         nft.approve(address(this), 10);
+    }
+
+    function buy_on_not_for_sale_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.buy(id);
     }
 }
