@@ -150,6 +150,7 @@ contract NFT is ERC721 {
 
     function _clearApproval(uint256 _tokenId) private {
         idToImageToken[_tokenId].approvedPerson = address(0);
+        emit Approval(idToImageToken[_tokenId].owner, address(0), _tokenId);
     }
 
     function buy(uint256 _tokenId) public payable onlyForSale(_tokenId) {
@@ -172,6 +173,8 @@ contract NFT is ERC721 {
         idToImageToken[_tokenId].owner = _to;
         idToImageToken[_tokenId].price = 0;
         _clearApproval(_tokenId);
+
+        emit Transfer(_from, _to, _tokenId);
     }
 
     function approve(address _approved, uint256 _tokenId)
