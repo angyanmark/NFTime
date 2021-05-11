@@ -158,20 +158,22 @@ contract NFT is ERC721 {
 
         require(imageToken.price != 0, NFT_NOT_FOR_SALE);
         require(msg.value >= imageToken.price, NFT_COSTS_MORE);
-        require(imageToken.owner != msg.sender, IS_OWNER);
 
         payable(imageToken.owner).transfer(msg.value);
         _changeOwner(_tokenId, imageToken.owner, msg.sender);
     }
 
     function _changeOwner(uint256 _tokenId, address _from, address _to) private {
-        require(idToImageToken[_tokenId].owner == _from, NOT_OWNER);
+        ImageToken memory imageToken = idToImageToken[_tokenId];
+
+        require(imageToken.owner != _to, IS_OWNER);
+        require(imageToken.owner == _from, NOT_OWNER);
 
         ownerToNFTCount[_from]--;
         ownerToNFTCount[_to]++;
 
-        idToImageToken[_tokenId].owner = _to;
-        idToImageToken[_tokenId].price = 0;
+        imageToken.owner = _to;
+        imageToken.price = 0;
         _clearApproval(_tokenId);
 
         emit Transfer(_from, _to, _tokenId);
