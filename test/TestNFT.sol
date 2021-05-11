@@ -18,10 +18,10 @@ contract TestNFT {
         uint256 actual = nft.balanceOf(address(this));
         uint256 expected = 0;
 
-        Assert.equal(actual, expected, "Should not have any NFTs");
+        Assert.equal(actual, expected, "Should not have any NFTs!");
     }
 
-    function test_balanceOf_zero_address() public {
+    function test_balanceOf_on_zero_address() public {
         bool r;
         (r, ) = address(this).call(
             abi.encodePacked(this.balanceOf_zero_address_fails.selector)
@@ -35,15 +35,23 @@ contract TestNFT {
         uint256 actual = nft.balanceOf(address(this));
         uint256 expected = 1;
 
-        Assert.equal(actual, expected, "Should have one NFT");
+        Assert.equal(actual, expected, "Should have one NFT!");
     }
 
-    function test_forSale_zero() public {
+    function test_forSale_on_zero() public {
         bool r;
         (r, ) = address(this).call(
             abi.encodePacked(this.forSale_zero_fails.selector)
         );
-        Assert.isFalse(r, "Shouldn't set price to zero!");
+        Assert.isFalse(r, "Should throw on zero price!");
+    }
+
+    function test_getPrice_on_not_for_sale() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.getPrice_not_for_sale_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on not for sale!");
     }
 
     function test_forSale_and_getPrice_with_mint() public {
@@ -54,7 +62,15 @@ contract TestNFT {
         uint256 actual = nft.getPrice(id);
         uint256 expected = price;
 
-        Assert.equal(actual, expected, "Price is incorrect");
+        Assert.equal(actual, expected, "Price is incorrect!");
+    }
+
+    function test_ownerOf_on_invalid_NFT() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.ownerOf_invalid_NFT_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on invalid NFT!");
     }
 
     function test_ownerOf_with_mint() public {
@@ -63,15 +79,7 @@ contract TestNFT {
         address actual = nft.ownerOf(id);
         address expected = address(this);
 
-        Assert.equal(actual, expected, "Wrong owner");
-    }
-
-    function test_mint_getPrice_without_forSale() public {
-        bool r;
-        (r, ) = address(this).call(
-            abi.encodePacked(this.mint_getPrice_fails.selector)
-        );
-        Assert.isFalse(r, "NFT should not be for sale!");
+        Assert.equal(actual, expected, "Wrong owner!");
     }
 
     function test_notForSale_on_already_notForSale() public {
@@ -79,7 +87,7 @@ contract TestNFT {
         (r, ) = address(this).call(
             abi.encodePacked(this.notForSale_on_already_notForSale_fails.selector)
         );
-        Assert.isFalse(r, "Price already zero!");
+        Assert.isFalse(r, "Should throw on not for sale NFT!");
     }
 
     function test_forSale_notForSale_getPrice() public {
@@ -127,9 +135,13 @@ contract TestNFT {
         nft.forSale(id, 0);
     }
 
-    function mint_getPrice_fails() public {
+    function getPrice_not_for_sale_fails() public {
         uint256 id = nft.mint(URI);
         nft.getPrice(id);
+    }
+
+    function ownerOf_invalid_NFT_fails() public {
+        nft.ownerOf(10);
     }
 
     function notForSale_on_already_notForSale_fails() public {
