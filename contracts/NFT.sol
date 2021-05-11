@@ -156,7 +156,6 @@ contract NFT is ERC721 {
     function buy(uint256 _tokenId) public payable onlyForSale(_tokenId) {
         ImageToken memory imageToken = idToImageToken[_tokenId];
 
-        require(imageToken.price != 0, NFT_NOT_FOR_SALE);
         require(msg.value >= imageToken.price, NFT_COSTS_MORE);
 
         payable(imageToken.owner).transfer(msg.value);
