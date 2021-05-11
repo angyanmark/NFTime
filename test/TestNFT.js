@@ -47,7 +47,7 @@ contract("NFT", function (accounts) {
 
       let actual = await nft.balanceOf(account_one, { from: account_one });
 
-      assert.equal(actual.toString(), "0", "Should not have any NFTs!");
+      assert.equal(actual, 0, "Should not have any NFTs!");
     });
   });*/ // FAILOL DE MÉ ???
 
@@ -68,6 +68,25 @@ contract("NFT", function (accounts) {
           "Should throw \"NFT costs more\"!"
         );
       }
+    });
+  });
+
+  it("Test isApprovedForAll", () => {
+    return NFT.deployed().then(async (nft) => {
+      let actual = await nft.isApprovedForAll(account_one, account_two, { from: account_one });
+      assert.equal(actual, false, "Account 2 should not be an operator!");
+    });
+  });
+
+  it("Test setApprovalForAll with isApprovedForAll", () => {
+    return NFT.deployed().then(async (nft) => {
+      await nft.setApprovalForAll(account_two, true, { from: account_one });
+      let actual1 = await nft.isApprovedForAll(account_one, account_two, { from: account_one });
+      assert.equal(actual1, true, "Account 2 should be an operator!");
+
+      await nft.setApprovalForAll(account_two, false, { from: account_one });
+      let actual2 = await nft.isApprovedForAll(account_one, account_two, { from: account_one });
+      assert.equal(actual2, false, "Account 2 should not be an operator!");
     });
   });
 });
