@@ -85,7 +85,9 @@ contract TestNFT {
     function test_notForSale_on_already_notForSale() public {
         bool r;
         (r, ) = address(this).call(
-            abi.encodePacked(this.notForSale_on_already_notForSale_fails.selector)
+            abi.encodePacked(
+                this.notForSale_on_already_notForSale_fails.selector
+            )
         );
         Assert.isFalse(r, "Should throw on not for sale NFT!");
     }
@@ -133,6 +135,30 @@ contract TestNFT {
         Assert.equal(actual, expected, "No one should be approved!");
     }
 
+    function test_getApproved_on_invalid_NFT() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.getApproved_on_invalid_NFT_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on invalid NFT!");
+    }
+
+    function test_approve_on_owner() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.approve_on_owner_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on owner!");
+    }
+
+    function test_approve_on_invalid_NFT() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.approve_on_invalid_NFT_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on invalid NFT!");
+    }
+
     /* Helpers, throwing error */
 
     function balanceOf_zero_address_fails() public view {
@@ -170,5 +196,18 @@ contract TestNFT {
         nft.forSale(id, 10000);
         nft.burn(id);
         nft.getPrice(id);
+    }
+
+    function getApproved_on_invalid_NFT_fails() public {
+        nft.getApproved(10);
+    }
+
+    function approve_on_owner_fails() public {
+        uint256 id = nft.mint(URI);
+        nft.approve(address(this), id);
+    }
+
+    function approve_on_invalid_NFT_fails() public {
+        nft.approve(address(this), 10);
     }
 }
