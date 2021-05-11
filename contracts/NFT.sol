@@ -30,7 +30,7 @@ contract NFT is ERC721 {
     }
 
     uint256 nextID = 1;
-    
+
     mapping(uint256 => ImageToken) private idToImageToken;
     mapping(address => uint256) private ownerToNFTCount;
     mapping(address => mapping(address => bool)) private ownerToOperators;
@@ -163,7 +163,11 @@ contract NFT is ERC721 {
         _changeOwner(_tokenId, imageToken.owner, msg.sender);
     }
 
-    function _changeOwner(uint256 _tokenId, address _from, address _to) private {
+    function _changeOwner(
+        uint256 _tokenId,
+        address _from,
+        address _to
+    ) private {
         ImageToken memory imageToken = idToImageToken[_tokenId];
 
         require(imageToken.owner != _to, IS_OWNER);
@@ -189,7 +193,7 @@ contract NFT is ERC721 {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(_approved != tokenOwner, IS_OWNER);
         idToImageToken[_tokenId].approvedPerson = _approved;
-        
+
         emit Approval(tokenOwner, _approved, _tokenId);
     }
 
