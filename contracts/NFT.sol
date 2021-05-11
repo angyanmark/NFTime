@@ -239,9 +239,9 @@ contract NFT is ERC721 {
     function burn(uint256 _tokenId) public authorized(_tokenId) {
         address tokenOwner = idToImageToken[_tokenId].owner;
 
-        delete idToImageToken[_tokenId];
-
         ownerToNFTCount[tokenOwner]--;
+
+        delete idToImageToken[_tokenId];
 
         emit Transfer(tokenOwner, address(0), _tokenId);
     }
