@@ -187,6 +187,7 @@ contract NFT is ERC721 {
         address tokenOwner = idToImageToken[_tokenId].owner;
         require(_approved != tokenOwner, IS_OWNER);
         idToImageToken[_tokenId].approvedPerson = _approved;
+        
         emit Approval(tokenOwner, _approved, _tokenId);
     }
 
