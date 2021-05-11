@@ -21,6 +21,14 @@ contract TestNFT {
         Assert.equal(actual, expected, "Should not have any NFTs");
     }
 
+    function test_balanceOf_zero_address() public {
+        bool r;
+        (r, ) = address(this).call(
+            abi.encodePacked(this.balanceOf_zero_address_fails.selector)
+        );
+        Assert.isFalse(r, "Should throw on zero address!");
+    }
+
     function test_mint_with_balanceOf() public {
         nft.mint(URI);
 
@@ -28,14 +36,6 @@ contract TestNFT {
         uint256 expected = 1;
 
         Assert.equal(actual, expected, "Should have one NFT");
-    }
-
-    function test_balanceOf_zero_address() public {
-        bool r;
-        (r, ) = address(this).call(
-            abi.encodePacked(this.balanceOf_zero_address_fails.selector)
-        );
-        Assert.isFalse(r, "Should throw on zero address!");
     }
 
     function test_forSale_zero() public {
